@@ -3,54 +3,53 @@
 
 //Get handles for Rapier engines
 
-SET engines TO SHIP:PARTSNAMED("RAPIER"). //Get list
-
-//Get list of MultiModeEngine modules
-SET modules TO List().  //Declare an empty list
-FOR e IN engines {
-	modules:ADD(e:GETMODULE("MultiModeEngine")).
-}.
-
-SET gimbals TO List().  //Declare an empty list
-FOR e IN engines {
-	gimbals:ADD(e:GETMODULE("ModuleGimbal")).
-}.
+SET rapierEngines TO SHIP:PARTSNAMED("RAPIER"). //Get list
 
 //===========================================
 //Setup complete.  Begin declaring functions.
 //===========================================
 
 FUNCTION SetRapiersOn {
-	FOR e IN modules {
-		e:DOACTION("Activate Engine",true).
+	FOR e IN rapierEngines {
+		e:Activate().
 	}.
 }
 FUNCTION SetRapiersOff {
-	FOR e IN modules {
-		e:DOACTION("Shutdown Engine",true).
+	FOR e IN rapierEngines {
+		e:Shutdown().
 	}.
 }.
 
 FUNCTION SetRapiersMode { 
 parameter mode.		//Pass "AirBreathing" or "ClosedCycle"
-	FOR m IN modules {
-		IF NOT (mode = m:GETFIELD("mode") ) {
-			m:DOEVENT("toggle mode").
-		}.
-	}.
+	LOCAL newPrimaryMode Is True.
+	IF mode = "AirBreathing" {
+		SET newPrimaryMode TO True.
+	}. ELSE IF mode = "ClosedCycle" {
+		SET newPrimaryMode TO False.
+	}. ELSE {
+		PRINT "SetRapiersMode: Pass 'AirBreathing' or 'ClosedCycle'".
+		RETURN.
+	}
+	
+	FOR e IN rapierEngines {
+		SET e:PrimaryMode TO newPrimaryMode. 
+	}
 }.
 
 FUNCTION SetRapiersGimbal {
 parameter new.		//Pass "On" or "Off", since True/False is unclear here
-	FOR g IN gimbals {
-		IF new = "On" {
-			//False is Gimbal On ingame
-			g:SETFIELD("gimbal",false).
-		}. ELSE IF new = "Off" {
-			g:SETFIELD("gimbal",true).
-		}. ELSE { 
-			Print "SetRapiersGimbal: invalid argument!".
-			Print "    Pass 'On' or 'Off' ".
-		}.
-	}.
+	LOCAL newLockState IS True.
+	IF new = "On" {
+		SET newLockState TO False.
+	}. ELSE IF new = "Off" {
+		SET newLockState TO True.
+	}. ELSE {
+		PRINT "SetRapiersGimbal: Pass 'On' or 'Off'".
+		RETURN.
+	}
+	
+	FOR e IN rapierEngines {
+		SET e:Gimbal:Lock TO newLockState.
+	}
 }.

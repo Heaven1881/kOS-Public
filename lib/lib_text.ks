@@ -1,4 +1,4 @@
 FUNCTION PrintHUD {
 parameter text.
-HUDTEXT(text, 4, 2, 32, YELLOW, true).
+HUDTEXT(text, 4, 2, 14, YELLOW, true).
 }.

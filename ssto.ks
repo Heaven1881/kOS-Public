@@ -24,6 +24,14 @@ RunOncePath ("0:/lib/lib_rapier"). //Import RAPIER engine handling functions
 RunOncePath ("0:/lib/lib_physics").
 RunOncePath ("0:/lib/lib_node").
 
+//====================
+// Prep & declarations
+//====================
+
+if ( Body:name <> "Kerbin" ) {
+	exit.
+}
+
 //Check if we're landed, otherwise skip ahead
 IF (Ship:Status = "LANDED") OR (Ship:Status = "PRELAUNCH") {
 
@@ -48,7 +56,7 @@ IF (Ship:Status = "LANDED") OR (Ship:Status = "PRELAUNCH") {
 LOCK Steering TO Heading(90, 0).
 
 // == Taking off == //
-PrintHUD("Taking off ...").
+PrintHUD("Taking off!").
 LOCK Throttle TO 1.
 BRAKES OFF. 
 
@@ -82,12 +90,20 @@ PrintHUD("Boosting ...").
 SetRapiersMode("ClosedCycle").
 SetRapiersGimbal("On").  //Control surfaces will be useless soon.
 
-WAIT UNTIL ALT:Apoapsis > 80000.
+WAIT UNTIL ALT:Apoapsis > boostToAp.
 LOCK THROTTLE TO 0. //Coast to Apoapsis
 LOCK STEERING TO PROGRADE.  //Minimize drag
 PrintHUD("Boost phase complete.  Coasting.").
 
-WAIT UNTIL Altitude > 70000. //Out of atmosphere
+// if Apoapsis too low, activate engines again
+UNTIL Altitude > 70000 {
+    IF Alt:Apoapsis < boostToAp {
+        LOCK Throttle TO 0.1.
+    }. ELSE {
+        LOCK Throttle TO 0.
+    }
+    WAIT 0.1.
+}
 
 //====================
 // In Space

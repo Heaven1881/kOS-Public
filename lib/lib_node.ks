@@ -13,13 +13,14 @@
 function exnode 
 {
 	// Get a copy of the next node in line
-	set nd to nextnode.
+	set nd TO nextnode.
 
 	//print out node's basic parameters - ETA and deltaV
     print "Node in: " + round(nd:eta) + ", DeltaV: " + round(nd:deltav:mag).
 
     //calculate ship's max acceleration
     set max_acc to ship:maxthrust/ship:mass.
+    set max_acc TO ship:maxthrust/ship:mass.
 
     // Now we just need to divide deltav:mag by our ship's max acceleration
     // to get the estimated time of the burn.
@@ -41,14 +42,14 @@ function exnode
 
 	// Wait until we are near the node, with 60 seconds grace
 	// This way we can wait in the current orientation, e.g. panels facing sun, until the last moment
-	PRINT "Waiting to align at T- " + ROUND(burn_duration/2 + 60).
+	PRINT "Waiting TO align at T- " + ROUND(burn_duration/2 + 60).
 	WAIT UNTIL nd:eta <= (burn_duration/2 + 60).
 
 	// Point to node, keeping roll the same. We have about 60 seconds to do this
 	// Large, unwieldy craft may fail without RCS, oscillating either side of the node
 	PRINT "Rotating towards node".
-	set np to nd:deltav. //points to node, don't care about the roll direction.
-    lock steering to np.
+	set np TO nd:deltav. //points to node, don't care about the roll direction.
+    lock steering TO nd:deltav.
 
     //now we need to wait until the burn vector and ship's facing are aligned
     wait until vang(np, ship:facing:vector) < 0.25.
@@ -59,43 +60,51 @@ function exnode
 	PRINT "Executing node".
 
 	//we only need to lock throttle once to a certain variable in the beginning of the loop, and adjust only the variable itself inside it
-    set tset to 0.
-    lock throttle to tset.
+    set tset TO 0.
+    lock throttle TO tset.
 
-    set done to False.
+    set done TO False.
     //initial deltav
-    set dv0 to nd:deltav.
+    set dv0 TO nd:deltav.
     until done
     {
         //recalculate current max_acceleration, as it changes while we burn through fuel
-        set max_acc to ship:maxthrust/ship:mass.
-
-        //throttle is 100% until there is less than 1 second of time left to burn
+        set max_acc TO ship:maxthrust/ship:mass.
+        SET v_angle_cos TO vdot(nd:deltav, steering) / (nd:deltav:mag * steering:mag).
+        SET v_angle_cos TO max(v_angle_cos, 0).
+        
+        //throttle is 100% until there is less than 1 second of time left TO burn
         //when there is less than 1 second - decrease the throttle linearly
-        set tset to min(nd:deltav:mag/max_acc, 1).
+        SET tset TO min(nd:deltav:mag / max_acc * v_angle_cos * v_angle_cos, 1).
 
-        //here's the tricky part, we need to cut the throttle as soon as our nd:deltav and initial deltav start facing opposite directions
+        //here's the tricky part, we need TO cut the throttle as soon as our nd:deltav and initial deltav start facing opposite directions
         //this check is done via checking the dot product of those 2 vectors
-        if vdot(dv0, nd:deltav) < 0
+        if v_angle_cos < 0.8 OR vdot(nd:deltav, dv0) / (nd:deltav:mag * dv0:mag) < 0.5
         {
-            print "End burn, remain dv " + round(nd:deltav:mag,1) + "m/s, vdot: " + round(vdot(dv0, nd:deltav),1).
-            lock throttle to 0.
+            print "#1 End burn, remain dv " + round(nd:deltav:mag,1) + "m/s, vdot: " + round(vdot(dv0, nd:deltav),1).
+            print "v_angle_cos = " + v_angle_cos + ", vdot = " + vdot(nd:deltav, dv0) / (nd:deltav:mag * dv0:mag).
+            lock throttle TO 0.
             break.
         }
 
-        //we have very little left to burn, less then 0.1m/s
+        //we have very little left TO burn, less then 0.1m/s
         if nd:deltav:mag < 0.1
         {
-            print "Finalizing burn, remain dv " + round(nd:deltav:mag,1) + "m/s, vdot: " + round(vdot(dv0, nd:deltav),1).
-            //we burn slowly until our node vector starts to drift significantly from initial vector
+            //print "Finalizing burn, remain dv " + round(nd:deltav:mag,1) + "m/s, vdot: " + round(vdot(dv0, nd:deltav),1).
+            //we burn slowly until our node vector starts TO drift significantly from initial vector
             //this usually means we are on point
-            wait until vdot(dv0, nd:deltav) < 0.5.
+            //wait until vdot(dv0, nd:deltav) < 0.5.
 
-            lock throttle to 0.
-            print "End burn, remain dv " + round(nd:deltav:mag,1) + "m/s, vdot: " + round(vdot(dv0, nd:deltav),1).
-            set done to True.
+            lock throttle TO 0.
+            print "#2 End burn, remain dv " + round(nd:deltav:mag,1) + "m/s, vdot: " + round(vdot(dv0, nd:deltav),1).
+            set done TO True.
         }
+        
+        WAIT 0.1.
     }
+    
+    
+    
     unlock steering.
     unlock throttle.
     wait 1.
@@ -124,8 +133,8 @@ function circle
 	// Calculate how much more velocity we need based on the required speed and our predicted speed
 	LOCAL dv TO ov - av.
 	
-	// Create a node and add it to the flight plan
-	// Add the required deltaV to prograde (assume all we want to do is go faster in our current direction)
+	// Create a node and add it TO the flight plan
+	// Add the required deltaV TO prograde (assume all we want TO do is go faster in our current direction)
 	LOCAL cnode TO NODE(TIME:SECONDS+ETA:APOAPSIS,0,0,dv).
 	ADD cnode.
 }
